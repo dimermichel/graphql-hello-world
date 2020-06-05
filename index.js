@@ -11,7 +11,7 @@ const {ApolloServer, gql} = require('apollo-server');
 
 const typeDefs = gql`
     type Query{
-       hello: String!
+       hello(name:String): String!
        user: User
     }
 
@@ -38,20 +38,32 @@ const typeDefs = gql`
 
     type Mutation {
         register(userInfo: UserInfo!): RegisterResponse!
-        login(username: String!, password: String!) : Boolean!
+        login(userInfo: UserInfo!) : String!
     }
 `;
 
 const resolvers = {
+    User: {
+        username: parent => {
+            console.log(parent);
+            return parent.username
+        }
+    },
     Query: {
-        hello: () => 'My first GraphQL API query',
+        hello: (parent, {name}) => `Hello ${name}. Welcome to my first GraphQL application.`,
         user: () => ({
             id: 123,
             username: "testUser"
         })
     },
     Mutation: {
-        login: () => true,
+        //args -> You can destructure the arguments
+        login: async (parent, {userInfo: {username}}, context, info) => {
+            //console.log(context);
+            // Check the password
+            // await checkPassword(password);
+            return username
+        },
         register: () => ({
             errors: null,
             // errors: [{
@@ -70,6 +82,6 @@ const resolvers = {
     }
 };
 
-const server = new ApolloServer({typeDefs, resolvers});
+const server = new ApolloServer({typeDefs, resolvers, context: (req, res) => ({req, res})});
 
 server.listen().then(({url})=> console.log(`server started at ${url}`));
